@@ -25,7 +25,7 @@ def relation_embedding_getter_TransE(model) -> pykeen.nn.Embedding:
     return relation_representations_embedding
 
 
-os.makedirs("results", exist_ok=True)
+#os.makedirs("results", exist_ok=True)
 
 triples = """
 job1 t1 appoint 
@@ -110,7 +110,7 @@ results = pipeline(
     loss="softplus",
     model_kwargs=dict(embedding_dim=2, relation_dim=2),
     optimizer_kwargs=dict(lr=1.0e-1),
-    training_kwargs=dict(num_epochs=100, use_tqdm_batch=False),
+    training_kwargs=dict(num_epochs=200, use_tqdm_batch=False),
     evaluation_kwargs=dict(use_tqdm=False),
     random_seed=1,
     device="cpu",
