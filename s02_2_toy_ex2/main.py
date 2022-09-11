@@ -10,6 +10,7 @@ from pykeen.triples import TriplesFactory
 
 from sklearn.manifold import TSNE
 import umap
+import pickle
 
 
 def entity_embedding_getter_TransE(model) -> pykeen.nn.Embedding:
@@ -107,7 +108,7 @@ results = pipeline(
     testing=tf,
     model="TransR",
     loss="softplus",
-    model_kwargs=dict(embedding_dim=20),
+    model_kwargs=dict(embedding_dim=2, relation_dim=2),
     optimizer_kwargs=dict(lr=1.0e-1),
     training_kwargs=dict(num_epochs=100, use_tqdm_batch=False),
     evaluation_kwargs=dict(use_tqdm=False),
@@ -124,39 +125,12 @@ results.plot(
     )
 )
 
+results.save_to_directory('nations_transe')
 
-embedding = entity_embedding_getter_TransE(results.model)()
-embedding = embedding.cpu().detach().numpy()
-
-
-ent_to_id = results.training.entity_to_id
-id_to_ent = {v: k for k, v in ent_to_id.items()}
-dataArr = []
-for k, v in ent_to_id.items():
-    dataArr.append({'idx': v, 'entity': k})
-df_ent = pd.DataFrame.from_records(dataArr)
+data_store = dict(tf=tf, model=results.model, training=results.training)
+filePath = os.path.join(os.getcwd(), "data_store.pickle")
+with open(filePath, "wb") as handle:
+    pickle.dump(data_store, handle, protocol=pickle.HIGHEST_PROTOCOL)
 
 
-filt = df_ent['entity'].str.contains('job')
-jobIdx = df_ent[filt]['idx'].values
 
-
-embedding = embedding[jobIdx, :]
-labels = df_ent[filt]['entity'].values
-tsne = TSNE(n_components=2, perplexity=3, random_state=0)
-ebr = tsne.fit_transform(embedding)
-
-
-fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-axs[0].scatter(ebr[:, 0], ebr[:, 1])
-for label, x, y in zip(labels, ebr[:, 0], ebr[:, 1]):
-    axs[0].annotate(label, xy=(x, y), xytext=(
-        0, 0), textcoords="offset points")
-
-
-trans = umap.UMAP(n_neighbors=3, random_state=42).fit(embedding)
-ebr = trans.embedding_
-axs[1].scatter(ebr[:, 0], ebr[:, 1])
-for label, x, y in zip(labels, ebr[:, 0], ebr[:, 1]):
-    axs[1].annotate(label, xy=(x, y), xytext=(
-        0, 0), textcoords="offset points")
